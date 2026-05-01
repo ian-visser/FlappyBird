@@ -47,6 +47,17 @@ canvas {
     pointer-events: none;
 }
 
+.high-score {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    font-size: 24px;
+    font-weight: bold;
+    color: #FFD700;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    pointer-events: none;
+}
+
 .game-over {
     position: absolute;
     top: 50%;

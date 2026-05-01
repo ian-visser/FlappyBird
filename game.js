@@ -3,15 +3,18 @@ class FlappyBirdGame {
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
         this.scoreElement = document.getElementById('scoreValue');
+        this.highScoreElement = document.getElementById('highScoreValue');
         this.gameOverElement = document.getElementById('gameOver');
         this.finalScoreElement = document.getElementById('finalScore');
+        this.gameOverHighScoreElement = document.getElementById('gameOverHighScore');
         this.startScreenElement = document.getElementById('startScreen');
+        this.startHighScoreElement = document.getElementById('startHighScore');
         this.restartBtn = document.getElementById('restartBtn');
         this.startBtn = document.getElementById('startBtn');
         
         this.gameState = 'start'; // 'start', 'playing', 'gameOver'
         this.score = 0;
-        this.bestScore = 0;
+        this.bestScore = localStorage.getItem('flappyBirdHighScore') || 0;
         
         // Bird properties
         this.bird = {
@@ -50,6 +53,7 @@ class FlappyBirdGame {
     init() {
         this.setupEventListeners();
         this.generateClouds();
+        this.updateHighScoreDisplay();
         this.gameLoop();
     }
     
@@ -262,10 +266,13 @@ class FlappyBirdGame {
     gameOver() {
         this.gameState = 'gameOver';
         this.finalScoreElement.textContent = this.score;
+        this.gameOverHighScoreElement.textContent = this.bestScore;
         this.gameOverElement.style.display = 'block';
         
         if (this.score > this.bestScore) {
             this.bestScore = this.score;
+            localStorage.setItem('flappyBirdHighScore', this.bestScore);
+            this.updateHighScoreDisplay();
         }
     }
     
@@ -305,30 +312,67 @@ class FlappyBirdGame {
     
     drawPipes() {
         this.pipes.forEach(pipe => {
-            // Top pipe
-            const topGradient = this.ctx.createLinearGradient(pipe.x, 0, pipe.x + this.pipeWidth, 0);
-            topGradient.addColorStop(0, '#2ecc71');
-            topGradient.addColorStop(0.5, '#27ae60');
-            topGradient.addColorStop(1, '#229954');
+            // Pipe gradients for 3D effect
+            const pipeGradient = this.ctx.createLinearGradient(pipe.x, 0, pipe.x + this.pipeWidth, 0);
+            pipeGradient.addColorStop(0, '#27ae60');
+            pipeGradient.addColorStop(0.3, '#2ecc71');
+            pipeGradient.addColorStop(0.7, '#27ae60');
+            pipeGradient.addColorStop(1, '#229954');
             
-            this.ctx.fillStyle = topGradient;
-            this.ctx.fillRect(pipe.x, 0, this.pipeWidth, pipe.topHeight);
+            const lipGradient = this.ctx.createLinearGradient(pipe.x, 0, pipe.x + this.pipeWidth, 0);
+            lipGradient.addColorStop(0, '#1e8449');
+            lipGradient.addColorStop(0.5, '#239b56');
+            lipGradient.addColorStop(1, '#1e8449');
             
-            // Top pipe cap
-            this.ctx.fillRect(pipe.x - 5, pipe.topHeight - 30, this.pipeWidth + 10, 30);
+            // TOP PIPE
+            // Main pipe body
+            this.ctx.fillStyle = pipeGradient;
+            this.ctx.fillRect(pipe.x + 8, 0, this.pipeWidth - 16, pipe.topHeight);
             
-            // Bottom pipe
-            this.ctx.fillStyle = topGradient;
-            this.ctx.fillRect(pipe.x, pipe.bottomY, this.pipeWidth, this.canvas.height - pipe.bottomY);
+            // Left lip/edge
+            this.ctx.fillStyle = lipGradient;
+            this.ctx.fillRect(pipe.x, 0, 8, pipe.topHeight);
             
-            // Bottom pipe cap
-            this.ctx.fillRect(pipe.x - 5, pipe.bottomY, this.pipeWidth + 10, 30);
+            // Right lip/edge
+            this.ctx.fillRect(pipe.x + this.pipeWidth - 8, 0, 8, pipe.topHeight);
             
-            // Pipe borders
-            this.ctx.strokeStyle = '#1e8449';
-            this.ctx.lineWidth = 2;
-            this.ctx.strokeRect(pipe.x, 0, this.pipeWidth, pipe.topHeight);
-            this.ctx.strokeRect(pipe.x, pipe.bottomY, this.pipeWidth, this.canvas.height - pipe.bottomY);
+            // Top cap with lips
+            this.ctx.fillStyle = lipGradient;
+            this.ctx.fillRect(pipe.x - 8, pipe.topHeight - 35, this.pipeWidth + 16, 35);
+            
+            // Top cap inner part
+            this.ctx.fillStyle = pipeGradient;
+            this.ctx.fillRect(pipe.x, pipe.topHeight - 30, this.pipeWidth, 30);
+            
+            // BOTTOM PIPE
+            // Main pipe body
+            this.ctx.fillStyle = pipeGradient;
+            this.ctx.fillRect(pipe.x + 8, pipe.bottomY, this.pipeWidth - 16, this.canvas.height - pipe.bottomY);
+            
+            // Left lip/edge
+            this.ctx.fillStyle = lipGradient;
+            this.ctx.fillRect(pipe.x, pipe.bottomY, 8, this.canvas.height - pipe.bottomY);
+            
+            // Right lip/edge
+            this.ctx.fillRect(pipe.x + this.pipeWidth - 8, pipe.bottomY, 8, this.canvas.height - pipe.bottomY);
+            
+            // Bottom cap with lips
+            this.ctx.fillStyle = lipGradient;
+            this.ctx.fillRect(pipe.x - 8, pipe.bottomY, this.pipeWidth + 16, 35);
+            
+            // Bottom cap inner part
+            this.ctx.fillStyle = pipeGradient;
+            this.ctx.fillRect(pipe.x, pipe.bottomY, this.pipeWidth, 30);
+            
+            // Add very subtle highlights for 3D effect
+            this.ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+            this.ctx.fillRect(pipe.x + 2, 0, 2, pipe.topHeight);
+            this.ctx.fillRect(pipe.x + 2, pipe.bottomY, 2, this.canvas.height - pipe.bottomY);
+            
+            // Add very subtle shadows for depth
+            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            this.ctx.fillRect(pipe.x + this.pipeWidth - 4, 0, 4, pipe.topHeight);
+            this.ctx.fillRect(pipe.x + this.pipeWidth - 4, pipe.bottomY, 4, this.canvas.height - pipe.bottomY);
         });
     }
     
@@ -362,44 +406,59 @@ class FlappyBirdGame {
         this.ctx.translate(this.bird.x + this.bird.width/2, this.bird.y + this.bird.height/2);
         this.ctx.rotate(this.bird.rotation * Math.PI / 180);
         
-        // Bird body
-        const birdGradient = this.ctx.createRadialGradient(0, 0, 0, 0, 0, this.bird.width/2);
-        birdGradient.addColorStop(0, '#FFD700');
-        birdGradient.addColorStop(0.7, '#FFA500');
-        birdGradient.addColorStop(1, '#FF8C00');
-        
-        this.ctx.fillStyle = birdGradient;
+        // Simple bird body - classic Flappy Bird style
+        this.ctx.fillStyle = '#FDB813';
         this.ctx.beginPath();
-        this.ctx.ellipse(0, 0, this.bird.width/2, this.bird.height/2, 0, 0, Math.PI * 2);
+        this.ctx.ellipse(0, 0, 17, 12, 0, 0, Math.PI * 2);
         this.ctx.fill();
         
-        // Bird eye
-        this.ctx.fillStyle = 'white';
+        // Simple white belly
+        this.ctx.fillStyle = '#FFFFFF';
         this.ctx.beginPath();
-        this.ctx.arc(8, -5, 6, 0, Math.PI * 2);
+        this.ctx.ellipse(0, 2, 12, 8, 0, 0, Math.PI * 2);
         this.ctx.fill();
         
-        this.ctx.fillStyle = 'black';
+        // Simple eye
+        this.ctx.fillStyle = '#FFFFFF';
         this.ctx.beginPath();
-        this.ctx.arc(10, -5, 3, 0, Math.PI * 2);
+        this.ctx.arc(8, -3, 5, 0, Math.PI * 2);
         this.ctx.fill();
         
-        // Bird beak
-        this.ctx.fillStyle = '#FF6347';
+        this.ctx.fillStyle = '#000000';
+        this.ctx.beginPath();
+        this.ctx.arc(9, -3, 2, 0, Math.PI * 2);
+        this.ctx.fill();
+        
+        // Simple beak
+        this.ctx.fillStyle = '#FF6B35';
         this.ctx.beginPath();
         this.ctx.moveTo(15, 0);
-        this.ctx.lineTo(25, 3);
-        this.ctx.lineTo(15, 6);
+        this.ctx.lineTo(22, 2);
+        this.ctx.lineTo(15, 4);
         this.ctx.closePath();
         this.ctx.fill();
         
-        // Bird wing
-        this.ctx.fillStyle = '#FF8C00';
+        // Simple wing
+        const wingFlap = Math.sin(Date.now() * 0.01) * 3;
+        this.ctx.fillStyle = '#FDB813';
         this.ctx.beginPath();
-        this.ctx.ellipse(-5, 2, 8, 12, -20 * Math.PI / 180, 0, Math.PI * 2);
+        this.ctx.ellipse(-5, 2 + wingFlap, 8, 10, -20 * Math.PI / 180, 0, Math.PI * 2);
         this.ctx.fill();
         
+        // Simple wing outline
+        this.ctx.strokeStyle = '#E67E22';
+        this.ctx.lineWidth = 1;
+        this.ctx.beginPath();
+        this.ctx.ellipse(-5, 2 + wingFlap, 8, 10, -20 * Math.PI / 180, 0, Math.PI * 2);
+        this.ctx.stroke();
+        
         this.ctx.restore();
+    }
+    
+    updateHighScoreDisplay() {
+        this.highScoreElement.textContent = this.bestScore;
+        this.startHighScoreElement.textContent = this.bestScore;
+        this.gameOverHighScoreElement.textContent = this.bestScore;
     }
     
     gameLoop() {
