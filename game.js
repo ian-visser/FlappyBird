@@ -23,8 +23,8 @@ class FlappyBirdGame {
             width: 34,
             height: 24,
             velocity: 0,
-            gravity: 0.1,
-            jumpStrength: -4,
+            gravity: 0.3,
+            jumpStrength: -6,
             rotation: 0
         };
         
@@ -33,8 +33,8 @@ class FlappyBirdGame {
         this.pipeWidth = 52;
         this.basePipeGap = 180; // Start with larger gap
         this.pipeGap = 180;
-        this.basePipeSpeed = 1.5; // Start slower
-        this.pipeSpeed = 1.5;
+        this.basePipeSpeed = 2.5; // Start faster
+        this.pipeSpeed = 2.5;
         this.pipeSpawnTimer = 0;
         this.pipeSpawnInterval = 120; // Start with longer interval
         
